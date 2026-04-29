@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>איקס עיגול — אלישע נגד רושל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0e0b1f;
+    --bg-2:#1a1235;
+    --bg-3:#2d1b4e;
+    --ink:#f4ecd8;
+    --ink-dim:#a89cc4;
+    --x-color:#ff5e7a;
+    --x-glow:rgba(255,94,122,.55);
+    --o-color:#5ee0ff;
+    --o-glow:rgba(94,224,255,.55);
+    --gold:#f5c95c;
+    --line:rgba(244,236,216,.18);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Heebo',sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,94,122,.18), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(94,224,255,.18), transparent 45%),
+      radial-gradient(circle at 50% 50%, var(--bg-3), var(--bg-1) 70%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* Grain overlay */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+    opacity:.35;
+    pointer-events:none;
+    z-index:1;
+    mix-blend-mode:overlay;
+  }
+
+  .stage{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:520px;
+    display:flex;
+    flex-direction:column;
+    gap:28px;
+  }
+
+  /* Header */
+  .header{
+    text-align:center;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-weight:300;
+    color:var(--gold);
+    letter-spacing:.4em;
+    font-size:.72rem;
+    text-transform:uppercase;
+    margin-bottom:8px;
+    opacity:.85;
+  }
+  .title{
+    font-family:'Fraunces',serif;
+    font-weight:800;
+    font-size:clamp(2.2rem,8vw,3.4rem);
+    line-height:1;
+    letter-spacing:-.02em;
+    background:linear-gradient(180deg,var(--ink) 0%,var(--ink-dim) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .title .vs{
+    display:inline-block;
+    margin:0 .35em;
+    font-style:italic;
+    font-weight:300;
+    color:var(--gold);
+    -webkit-text-fill-color:var(--gold);
+  }
+
+  /* Scoreboard */
+  .score{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    align-items:center;
+    gap:14px;
+    padding:18px 22px;
+    background:linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    border-radius:18px;
+    backdrop-filter:blur(8px);
+  }
+  .player{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:8px 6px;
+    border-radius:12px;
+    transition:all .35s ease;
+  }
+  .player.active{
+    background:rgba(255,255,255,.04);
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .player .mark{
+    font-family:'Fraunces',serif;
+    font-weight:800;
+    font-size:1.6rem;
+    line-height:1;
+  }
+  .player.x .mark{color:var(--x-color);text-shadow:0 0 18px var(--x-glow);}
+  .player.o .mark{color:var(--o-color);text-shadow:0 0 18px var(--o-glow);}
+  .player .name{
+    font-size:.95rem;
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+  .player .pts{
+    font-family:'Fraunces',serif;
+    font-size:1.7rem;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .divider{
+    width:1px;
+    height:48px;
+    background:linear-gradient(180deg,transparent,var(--line),transparent);
+  }
+
+  /* Status line */
+  .status{
+    text-align:center;
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:1.15rem;
+    color:var(--ink-dim);
+    min-height:1.6em;
+    transition:color .3s ease;
+  }
+  .status .accent-x{color:var(--x-color);font-weight:600;font-style:normal;}
+  .status .accent-o{color:var(--o-color);font-weight:600;font-style:normal;}
+  .status .accent-gold{color:var(--gold);font-weight:600;font-style:normal;}
+
+  /* Board */
+  .board{
+    position:relative;
+    aspect-ratio:1;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    gap:10px;
+    padding:14px;
+    background:linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+    border:1px solid var(--line);
+    border-radius:24px;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.45),
+      inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  .cell{
+    position:relative;
+    background:rgba(14,11,31,.55);
+    border-radius:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    transition:transform .2s ease, background .25s ease;
+    border:1px solid rgba(255,255,255,.04);
+  }
+  .cell:hover:not(.played):not(.locked){
+    background:rgba(255,255,255,.05);
+    transform:translateY(-2px);
+  }
+  .cell.locked{cursor:not-allowed;}
+  .cell::after{
+    content:"";
+    position:absolute;inset:0;
+    background:radial-gradient(circle at center, rgba(255,255,255,.08), transparent 60%);
+    opacity:0;
+    transition:opacity .3s ease;
+    pointer-events:none;
+  }
+  .cell:hover:not(.played):not(.locked)::after{opacity:1;}
+
+  .cell svg{
+    width:62%;
+    height:62%;
+    overflow:visible;
+  }
+  .cell.x svg path,
+  .cell.x svg line{
+    stroke:var(--x-color);
+    filter:drop-shadow(0 0 12px var(--x-glow));
+  }
+  .cell.o svg circle{
+    stroke:var(--o-color);
+    filter:drop-shadow(0 0 12px var(--o-glow));
+  }
+
+  /* Drawing animations */
+  .cell.x .stroke-1,
+  .cell.x .stroke-2{
+    stroke-dasharray:100;
+    stroke-dashoffset:100;
+    animation:draw .35s ease forwards;
+  }
+  .cell.x .stroke-2{animation-delay:.25s;}
+  .cell.o circle{
+    stroke-dasharray:283;
+    stroke-dashoffset:283;
+    animation:draw-o .55s ease forwards;
+  }
+
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  @keyframes draw-o{to{stroke-dashoffset:0;}}
+
+  /* Winning highlight */
+  .cell.win{
+    background:rgba(245,201,92,.12);
+    box-shadow:inset 0 0 0 1px rgba(245,201,92,.45), 0 0 30px rgba(245,201,92,.25);
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:inset 0 0 0 1px rgba(245,201,92,.45), 0 0 20px rgba(245,201,92,.2);}
+    50%{box-shadow:inset 0 0 0 1px rgba(245,201,92,.85), 0 0 40px rgba(245,201,92,.5);}
+  }
+
+  /* Controls */
+  .controls{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+  }
+  button{
+    font-family:'Heebo',sans-serif;
+    font-weight:600;
+    font-size:.95rem;
+    padding:12px 22px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    color:var(--ink);
+    cursor:pointer;
+    transition:all .25s ease;
+    letter-spacing:.02em;
+  }
+  button:hover{
+    background:rgba(255,255,255,.1);
+    transform:translateY(-1px);
+    border-color:rgba(244,236,216,.3);
+  }
+  button.primary{
+    background:linear-gradient(135deg,var(--gold),#e0a838);
+    color:#1a1235;
+    border-color:transparent;
+  }
+  button.primary:hover{
+    box-shadow:0 8px 24px rgba(245,201,92,.35);
+  }
+
+  /* Page intro */
+  .stage > *{
+    opacity:0;
+    transform:translateY(12px);
+    animation:rise .7s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .stage > *:nth-child(1){animation-delay:.05s;}
+  .stage > *:nth-child(2){animation-delay:.15s;}
+  .stage > *:nth-child(3){animation-delay:.25s;}
+  .stage > *:nth-child(4){animation-delay:.35s;}
+  .stage > *:nth-child(5){animation-delay:.45s;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  /* Confetti dot */
+  .dot{
+    position:fixed;
+    width:8px;height:8px;
+    border-radius:50%;
+    pointer-events:none;
+    z-index:99;
+  }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <header class="header">
+      <div class="eyebrow">Tic · Tac · Toe</div>
+      <h1 class="title">אלישע<span class="vs">vs</span>רושל</h1>
+    </header>
+
+    <section class="score" aria-label="לוח תוצאות">
+      <div class="player x active" id="player-x">
+        <span class="mark">X</span>
+        <span class="name">אלישע</span>
+        <span class="pts" id="score-x">0</span>
+      </div>
+      <div class="divider"></div>
+      <div class="player o" id="player-o">
+        <span class="mark">O</span>
+        <span class="name">רושל</span>
+        <span class="pts" id="score-o">0</span>
+      </div>
+    </section>
+
+    <p class="status" id="status">תורו של <span class="accent-x">אלישע</span></p>
+
+    <div class="board" id="board" role="grid" aria-label="לוח המשחק">
+      <div class="cell" data-i="0" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="1" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="2" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="3" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="4" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="5" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="6" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="7" role="gridcell" tabindex="0"></div>
+      <div class="cell" data-i="8" role="gridcell" tabindex="0"></div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-new" class="primary">סיבוב חדש</button>
+      <button id="btn-reset">איפוס תוצאות</button>
+    </div>
+  </main>
+
+<script>
+  const board = document.getElementById('board');
+  const cells = [...board.querySelectorAll('.cell')];
+  const statusEl = document.getElementById('status');
+  const scoreXEl = document.getElementById('score-x');
+  const scoreOEl = document.getElementById('score-o');
+  const playerXEl = document.getElementById('player-x');
+  const playerOEl = document.getElementById('player-o');
+
+  const NAMES = { X: 'אלישע', O: 'רושל' };
+  let state = Array(9).fill(null);
+  let current = 'X';
+  let locked = false;
+  let scores = { X: 0, O: 0 };
+  let starter = 'X';
+
+  const WINS = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  const svgX = `<svg viewBox="0 0 100 100"><line class="stroke-1" x1="20" y1="20" x2="80" y2="80" stroke-width="9" stroke-linecap="round"/><line class="stroke-2" x1="80" y1="20" x2="20" y2="80" stroke-width="9" stroke-linecap="round"/></svg>`;
+  const svgO = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="none" stroke-width="9" stroke-linecap="round"/></svg>`;
+
+  function setStatus(html){
+    statusEl.innerHTML = html;
+  }
+
+  function updateActiveIndicator(){
+    playerXEl.classList.toggle('active', current === 'X' && !locked);
+    playerOEl.classList.toggle('active', current === 'O' && !locked);
+  }
+
+  function renderTurn(){
+    const accent = current === 'X' ? 'accent-x' : 'accent-o';
+    setStatus(`תורו של <span class="${accent}">${NAMES[current]}</span>`);
+    updateActiveIndicator();
+  }
+
+  function checkWin(){
+    for(const line of WINS){
+      const [a,b,c] = line;
+      if(state[a] && state[a] === state[b] && state[a] === state[c]){
+        return { winner: state[a], line };
+      }
+    }
+    if(state.every(Boolean)) return { winner: 'draw', line: null };
+    return null;
+  }
+
+  function handleClick(e){
+    const cell = e.currentTarget;
+    const i = +cell.dataset.i;
+    if(locked || state[i]) return;
+
+    state[i] = current;
+    cell.classList.add('played', current.toLowerCase());
+    cell.innerHTML = current === 'X' ? svgX : svgO;
+
+    const result = checkWin();
+    if(result){
+      locked = true;
+      cells.forEach(c => c.classList.add('locked'));
+      if(result.winner === 'draw'){
+        setStatus(`<span class="accent-gold">תיקו!</span> סיבוב מאוזן`);
+      } else {
+        result.line.forEach(idx => cells[idx].classList.add('win'));
+        scores[result.winner]++;
+        scoreXEl.textContent = scores.X;
+        scoreOEl.textContent = scores.O;
+        const accent = result.winner === 'X' ? 'accent-x' : 'accent-o';
+        setStatus(`<span class="${accent}">${NAMES[result.winner]}</span> ניצח את הסיבוב 🎉`);
+        burst(result.winner);
+      }
+      playerXEl.classList.remove('active');
+      playerOEl.classList.remove('active');
+      return;
+    }
+
+    current = current === 'X' ? 'O' : 'X';
+    renderTurn();
+  }
+
+  function newRound(){
+    state = Array(9).fill(null);
+    locked = false;
+    starter = starter === 'X' ? 'O' : 'X';
+    current = starter;
+    cells.forEach(c => {
+      c.classList.remove('played','x','o','win','locked');
+      c.innerHTML = '';
+    });
+    renderTurn();
+  }
+
+  function resetScores(){
+    scores = { X:0, O:0 };
+    scoreXEl.textContent = '0';
+    scoreOEl.textContent = '0';
+    starter = 'O'; // so newRound flips to X
+    newRound();
+  }
+
+  function burst(winner){
+    const color = winner === 'X' ? '#ff5e7a' : '#5ee0ff';
+    const accent = '#f5c95c';
+    for(let i=0; i<32; i++){
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.background = Math.random() > .5 ? color : accent;
+      const rect = board.getBoundingClientRect();
+      const x = rect.left + rect.width/2;
+      const y = rect.top + rect.height/2;
+      dot.style.left = x + 'px';
+      dot.style.top = y + 'px';
+      document.body.appendChild(dot);
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 120 + Math.random() * 180;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      dot.animate([
+        { transform:'translate(-50%,-50%) scale(1)', opacity:1 },
+        { transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity:0 }
+      ], { duration: 900 + Math.random()*400, easing:'cubic-bezier(.15,.7,.25,1)' });
+      setTimeout(()=>dot.remove(), 1400);
+    }
+  }
+
+  cells.forEach(c => {
+    c.addEventListener('click', handleClick);
+    c.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); handleClick({currentTarget:c}); }
+    });
+  });
+  document.getElementById('btn-new').addEventListener('click', newRound);
+  document.getElementById('btn-reset').addEventListener('click', resetScores);
+
+  renderTurn();
+</script>
+</body>
+</html>
